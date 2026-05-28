@@ -1,5 +1,8 @@
+library(dplyr)
+library(countrycode)
+
 ## Data Cleaning
-rankings = read.csv("2024 QS World University Rankings 1.1 (For qs.com).csv", header = TRUE)
+rankings = read.csv("2024 QS World University Rankings.csv", header = TRUE)
 colnames(rankings)<-c("y2024_rank","y2023_rank","institution","country_code","country",
                 "institution_size", "focus", "research_output", "age_band", "status", 
                 "ar_score", "ar_rank",
@@ -26,6 +29,16 @@ for (colname in colnames(rankings)) {
   if (grepl('_score', colname)){
     rankings[[colname]] <- as.numeric(rankings[[colname]])}
 }
+
+# Converting country code to continent
+rankings$country <- recode(rankings$country,
+                           "USA" = "United States",
+                           "UK" = "United Kingdom")
+rankings$continents <- countrycode(
+  rankings$country,
+  origin = "country.name",
+  destination = "continent"
+)
 
 # Removing unused variables
 rankings <- rankings %>% select(-(y2024_rank:country)) %>% select(-ends_with("_rank")) %>% select(-overall_score)
@@ -194,9 +207,16 @@ rankings_contients<- aov(ln_IFR_score~factor(rankings$continents))
 summary(rankings_contients)
 pairwise.t.test(ln_IFR_score, rankings$continents, p.adjust.method = "none")
 #Creating each continent variables 
-America = rankings %>% filter (continents %in% ("Americas")) %>% select(ln_IFR_score)
-Asia_Oceania = rankings %>% filter (continents %in% ("Asia and Oceania")) %>% select(ln_IFR_score, ln_IS_score)
-Europe = rankings %>% filter (continents %in% ("Europe")) %>% select(ln_IFR_score, ln_IS_score)
+rankings$ln_IFR_score <- ln_IFR_score
+America <- rankings %>% 
+  filter(continents == "Americas") %>% 
+  dplyr::select(all_of("ln_IFR_score"))
+Asia_Oceania <- rankings %>% 
+  filter(continents == "Asia and Oceania") %>% 
+  dplyr::select(all_of("ln_IFR_score"))
+Europe <- rankings %>% 
+  filter(continents == "Europe") %>% 
+  dplyr::select(all_of("ln_IFR_score"))
 CI95 = function(x) {
   n <- length(x)
   xbar <- mean(x)
