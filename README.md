@@ -91,7 +91,6 @@ Methods include:
 
 * R
 * Corrplot
-* 
 
 ---
 
